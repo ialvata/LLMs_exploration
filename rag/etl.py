@@ -3,6 +3,10 @@ from pathlib import Path
 import numpy as np
 import chromadb
 from chromadb.api import ClientAPI
+from concurrent.futures import ThreadPoolExecutor
+
+BLOCK_SIZE = 166
+
 
 def prepare_car_reviews_data(chroma_client: ClientAPI,
                              folder_path: Path = Path("data/edmund_car_reviews")):
@@ -23,7 +27,7 @@ def prepare_car_reviews_data(chroma_client: ClientAPI,
     for file_path in files_path:
         filename = file_path.name
         print(f"Reading {filename}")
-        car_reviews_df = pd.read_csv(files_path[0],lineterminator='\n', dtype=dtypes)
+        car_reviews_df = pd.read_csv(file_path,lineterminator='\n', dtype=dtypes)
         if "Rating\r" in car_reviews_df.columns:
             car_reviews_df.rename(columns={"Rating\r": "Rating"}, inplace = True)
         vehicle_data = car_reviews_df["Vehicle_Title"].str.split(' ', expand=True)
@@ -39,8 +43,19 @@ def prepare_car_reviews_data(chroma_client: ClientAPI,
         reviews = car_reviews_df["Review"].to_list()
         ids = [f"{filename.split('.')[0]}_{i}" for i in range(car_reviews_df.shape[0])]
         print(f"Adding data to ChromaDB: len(ids) = {len(ids)}")
-        collection.add(documents = reviews, metadatas = metadata, ids = ids) # type: ignore
+        # collection.add(documents = reviews, metadatas = metadata, ids = ids) # type: ignore
+        with ThreadPoolExecutor() as executor:
+            futures =[
+                executor.submit(
+                    collection.add,
+                    documents = reviews[start:start+BLOCK_SIZE], 
+                    metadatas = metadata[start:start+BLOCK_SIZE], # type: ignore
+                    ids = ids[start:start+BLOCK_SIZE] 
+                ) for start in np.arange(0,len(reviews),BLOCK_SIZE)
+            ]
+            [future.result() for future in futures]
 
+        
 
 if __name__=="__main__":
     print("Creating Chroma Client")
