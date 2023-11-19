@@ -1,0 +1,13 @@
+version: '3.9'
+services:
+  vector_db:
+    image: chromadb/chroma:latest
+    container_name: chroma_db
+    ports:
+      - 8000:8000
+    volumes:
+      - chroma_db_data:/usr/share/chroma_db/data
+    env_file:
+      - ./database/.env.local.db
+volumes:
+  chroma_db_data:
