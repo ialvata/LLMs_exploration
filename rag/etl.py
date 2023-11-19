@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor,as_completed
 from tqdm import tqdm
 
 BLOCK_SIZE = 200
-MAX_NUM = 1000
+MAX_NUM = 10000
 
 def load_car_reviews(collection: Collection,
                              folder_path: Path = Path("data/edmund_car_reviews")):
