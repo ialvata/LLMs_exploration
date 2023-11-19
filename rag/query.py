@@ -15,7 +15,7 @@ embedding_func = embedding_functions.SentenceTransformerEmbeddingFunction(
 collection = chroma_client.get_collection(name=COLLECTION_NAME, embedding_function=embedding_func)
 
 great_reviews = collection.query(
-    query_texts=["Positive reviews that discuss the car's performance"],
+    query_texts=["Positive reviews that discuss the patient's symptoms"],
     n_results=5,
     include=["documents", "distances", "metadatas"]
 )
