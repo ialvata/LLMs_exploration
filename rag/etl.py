@@ -44,7 +44,17 @@ def load_car_reviews(collection: Collection,
         reviews = car_reviews_df["Review"].to_list()
         ids = [f"{filename.split('.')[0]}_{i}" for i in range(car_reviews_df.shape[0])]
         print(f"Adding data to ChromaDB: len(ids) = {len(ids)}")
-        collection.add(documents = reviews, metadatas = metadata, ids = ids) # type: ignore
+        # collection.add(documents = reviews, metadatas = metadata, ids = ids) # type: ignore
+        with ThreadPoolExecutor() as executor:
+            futures =[
+                executor.submit(
+                    collection.add,
+                    documents = reviews[start:start+BLOCK_SIZE], 
+                    metadatas = metadata[start:start+BLOCK_SIZE], # type: ignore
+                    ids = ids[start:start+BLOCK_SIZE] 
+                ) for start in np.arange(0,len(reviews),BLOCK_SIZE)
+            ]
+            [future.result() for future in futures]
 
 def load_drug_reviews(collection: Collection,
                       folder_path: Path = Path("data/drugs_reviews")) -> list:
